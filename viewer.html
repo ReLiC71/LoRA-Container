@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Fons Artis - Cover viewer</title>
+<style>
+@font-face{font-family:Inter;font-weight:400 500;src:local("Inter")}
+@font-face{font-family:Inter;font-weight:600 700;src:local("Inter Bold")}
+*{box-sizing:border-box}
+body{margin:0;height:100vh;display:flex;flex-direction:column;background:#1F1F1E;color:#ECE9E2;font-family:Inter,system-ui,sans-serif;font-size:13px}
+header{height:44px;flex:none;padding:0 16px;background:#262626;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:12px}
+header b{font-size:14px;font-weight:600}header i{width:1px;height:16px;background:rgba(255,255,255,.14)}header span{font-size:14px;color:#B5B0A7}
+main{flex:1;min-height:0;display:flex}
+aside{width:280px;flex:none;background:#262626;border-right:1px solid rgba(255,255,255,.08);padding:14px;display:flex;flex-direction:column;gap:10px;min-height:0}
+#list{flex:1;overflow:auto;display:flex;flex-direction:column;gap:2px}
+.f{height:34px;flex:none;padding:0 10px;border:0;border-radius:8px;background:transparent;color:#B5B0A7;font:600 13px Inter,system-ui,sans-serif;display:flex;align-items:center;gap:8px;text-align:left;cursor:pointer}
+.f.on{background:#3D3D3B;color:#ECE9E2}.f span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.f em{font-style:normal;font-weight:500;font-variant-numeric:tabular-nums}
+.btn{height:34px;border:0;border-radius:8px;background:#3D3D3B;color:#ECE9E2;font:600 13px Inter,system-ui,sans-serif;cursor:pointer}.btn:hover{background:#A66BD6}
+.note{padding:12px;border-radius:8px;background:#1F1F1E;color:#B5B0A7;line-height:1.45}
+section{flex:1;min-width:0;display:flex;flex-direction:column;padding:16px;gap:12px}
+#stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;border-radius:8px;background:#262626}
+#stage.drop{outline:2px dashed #A66BD6}
+#big{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px}
+#strip{flex:none;display:flex;gap:8px;height:96px}
+#strip img{height:96px;border-radius:6px;opacity:.55;cursor:pointer;border:2px solid transparent}
+#strip img.on{opacity:1;border-color:#A66BD6}
+#cap{flex:none;color:#B5B0A7;font-variant-numeric:tabular-nums;line-height:1.5;word-break:break-all}
+</style></head><body>
+<header><b>Fons Artis</b><i></i><span>Cover viewer</span></header>
+<main>
+<aside><div style="font-size:15px;font-weight:600">Files</div>
+<button class="btn" id="pick">Open safetensors...</button>
+<input type="file" id="inp" accept=".safetensors" multiple hidden>
+<div id="list"></div>
+<div class="note">Drop files anywhere. Reads only the header, so nothing large is loaded. Left and right change cover, up and down change file.</div></aside>
+<section><div id="stage"><span style="color:#B5B0A7">Drop a .safetensors file here</span></div><div id="strip"></div><div id="cap"></div></section>
+</main>
+<script>
+//PARSE
+async function readCovers(file){
+  const n=Number(new DataView(await file.slice(0,8).arrayBuffer()).getBigUint64(0,true));
+  if(!(n>0&&n<2e8))throw new Error('not a safetensors header');
+  const m=JSON.parse(new TextDecoder().decode(await file.slice(8,8+n).arrayBuffer())).__metadata__||{};
+  const covers=[];
+  for(let i=1;i<=Number(m.cover_count||0);i++){const v=m['cover_'+i];if(v)covers.push(v.startsWith('data:')?v:'data:image/jpeg;base64,'+v);}
+  return{meta:m,covers};
+}
+//ENDPARSE
+const $=id=>document.getElementById(id);
+let files=[],fi=-1,ci=0;
+const label=i=>i===0?'cover 1 (preview and icon)':'cover '+(i+1)+' (gallery '+i+')';
+function show(){
+  const f=files[fi];$('list').innerHTML='';
+  files.forEach((x,i)=>{const b=document.createElement('button');b.className='f'+(i===fi?' on':'');
+    b.innerHTML='<span></span><em>'+(x.err?'none':x.covers.length)+'</em>';b.firstChild.textContent=x.name;b.onclick=()=>{fi=i;ci=0;show()};$('list').appendChild(b)});
+  $('strip').innerHTML='';
+  if(!f||!f.covers||!f.covers.length){$('stage').innerHTML='<span style="color:#B5B0A7">'+(f?(f.err||'No embedded covers in this file'):'Drop a .safetensors file here')+'</span>';$('cap').textContent=f?f.name:'';return}
+  $('stage').innerHTML='<img id="big">';$('big').src=f.covers[ci];
+  f.covers.forEach((c,i)=>{const t=document.createElement('img');t.src=c;t.className=i===ci?'on':'';t.onclick=()=>{ci=i;show()};$('strip').appendChild(t)});
+  const m=f.meta,kb=Math.round(f.covers[ci].length*0.75/1024);
+  $('cap').textContent=f.name+'  |  '+label(ci)+'  |  '+kb+' KiB'+(m.model_sha256_original?'  |  original sha256 '+m.model_sha256_original:'')+(m.tensor_data_sha256?'  |  tensor data sha256 '+m.tensor_data_sha256:'');
+}
+async function add(list){
+  for(const file of list){const x={name:file.name};
+    try{Object.assign(x,await readCovers(file))}catch(e){x.err=String(e.message||e)}
+    files.push(x)}
+  if(fi<0&&files.length){fi=0;ci=0}show();
+}
+$('pick').onclick=()=>$('inp').click();$('inp').onchange=e=>{add([...e.target.files]);e.target.value=''};
+addEventListener('dragover',e=>{e.preventDefault();$('stage').classList.add('drop')});
+addEventListener('dragleave',()=>$('stage').classList.remove('drop'));
+addEventListener('drop',e=>{e.preventDefault();$('stage').classList.remove('drop');add([...e.dataTransfer.files])});
+addEventListener('keydown',e=>{const f=files[fi];if(!f)return;
+  if(e.key==='ArrowRight'&&f.covers&&ci<f.covers.length-1)ci++;else if(e.key==='ArrowLeft'&&ci>0)ci--;
+  else if(e.key==='ArrowDown'&&fi<files.length-1){fi++;ci=0}else if(e.key==='ArrowUp'&&fi>0){fi--;ci=0}else return;
+  e.preventDefault();show()});
+</script></body></html>
