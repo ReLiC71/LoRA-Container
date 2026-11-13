@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lora-container"
+version = "1.0.0"
+description = "Put a cover image, a gallery and metadata inside a .safetensors header"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Robert Cunnington" }]
+requires-python = ">=3.8"
+dependencies = ["Pillow"]
+
+[project.optional-dependencies]
+blake3 = ["blake3"]
+drop = ["tkinterdnd2"]
+test = ["pytest"]
+
+[project.urls]
+Homepage = "https://github.com/ReLiC71/LoRA-Container"
+
+[project.scripts]
+lora-container = "lora_container:main"
+
+[project.gui-scripts]
+lora-container-gui = "lora_container_gui:main"
+
+[tool.setuptools]
+py-modules = ["lora_container", "lora_container_gui"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
