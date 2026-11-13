@@ -240,7 +240,7 @@ def test_cm_info(kit):
     assert cm["Hashes"]["SHA256"] == before.upper() and cm["OriginalHashes"] == cm["Hashes"]
     assert len(cm["Hashes"]["CRC32"]) == 8 and "CurrentHash" not in cm and cm["ThumbnailImageUrl"] is None
     assert b"/home/someone" not in open(out, "rb").read(8 + lc.read_header(out)[0])
-    paths = lc.extract(out, str(tmp / "x"), sm_names=True)
+    paths = lc.extract(out, str(tmp / "x"), gnames=True)
     assert [os.path.basename(p) for p in paths] == ["o.preview.jpeg", "o.gallery1.jpeg", "o.gallery2.jpeg", "o.cm-info.json"]
     j = json.load(open(paths[-1]))
     assert j["Hashes"]["SHA256"] == sha(out).upper() and j["OriginalHashes"]["SHA256"] == before.upper()
@@ -335,7 +335,7 @@ def test_cli(kit, capsys):
     assert s["cm_info"]["AuthorUsername"] == "Rob" and s["cm_info"]["TrainedWords"] == ["x", "y"]
     assert lc.main(["show", out]) == 0 and "preview and icon" in capsys.readouterr().out
     assert lc.main(["verify", out, model]) == 0
-    assert lc.main(["extract", out, str(tmp / "x"), "--sm-names"]) == 0
+    assert lc.main(["extract", out, str(tmp / "x"), "--gnames"]) == 0
     assert lc.main(["strip", out]) == lc.EXIT_REFUSED
     assert lc.main(["strip", out, "-o", str(tmp / "s.safetensors")]) == 0
     assert "byte-identical" in capsys.readouterr().out and sha(str(tmp / "s.safetensors")) == sha(model)

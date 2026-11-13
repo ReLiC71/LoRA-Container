@@ -21,8 +21,8 @@ Any other key in `__metadata__` is left alone.
 Covers
 ------
 - `cover_1` is the cover: the preview and the icon. It corresponds to Stability Matrix's `NAME.preview.jpeg`.
-- `cover_2` onwards are the gallery, in order. They correspond to `NAME.gallery1.jpeg`, `NAME.gallery2.jpeg` and so on.
-- The convention is one cover and five gallery images, six in all. Readers must not assume six: read `cover_count`.
+- `cover_2` onwards are the gallery, in order. They correspond to `NAME.gallery1.jpeg`, `NAME.gallery2.jpeg` and so on, loose files named by this project's own convention: Stability Matrix keeps a cover only and has no gallery files.
+- The convention is one cover and five gallery images, six in all. Readers must not assume six: read `cover_count`. The format sets no limit of its own; the limit is the header size. The designer's estimate, not a tested figure, is that about 2000 images fit safely, so six barely dents it.
 - Each value is standard base64 (with padding) of a JPEG file. A reader must also accept the same data with a `data:image/jpeg;base64,` prefix.
 - The reference writer scales an image down so that its shortest side is 512 px and saves it at JPEG quality 46. That is a default, not part of the format.
 

@@ -319,7 +319,7 @@ class App:
             self.fail(e)
             return False
         found = 0
-        if not covers:  # nothing embedded yet: take the loose images beside the model, by their usual names
+        if not covers:  # nothing embedded yet: take the loose images beside the model, by NAME.preview.jpeg and NAME.gallery1.jpeg ... (the preview name is Stability Matrix's, the gallery names are this project's own)
             try:
                 loose = lc.find_covers(path)[:SLOTS]
             except OSError:
@@ -394,7 +394,7 @@ class App:
             self.extract(d)
 
     def extract(self, folder):
-        self._work("Extracting...", lambda: lc.extract(self.model, folder, sm_names=True),
+        self._work("Extracting...", lambda: lc.extract(self.model, folder, gnames=True),
                    lambda paths: self.say("Wrote %d files to %s" % (len(paths), folder)))
 
     def strip_dialog(self):

@@ -460,10 +460,10 @@ def verify(model):
     return {"model": model, "status": "failed" if problems else "ok", "problems": problems, "notes": notes}
 
 
-def extract(model, outdir, sm_names=False):
+def extract(model, outdir, gnames=False):
     """Write the covers, and the cm-info if there is one, to outdir. Returns the paths.
 
-    sm_names: name them as Stability Matrix does (NAME.preview.jpeg, NAME.gallery1.jpeg ...).
+    gnames: name them NAME.preview.jpeg (Stability Matrix's name), then NAME.gallery1.jpeg ... (this project's own).
     """
     _, hdr = read_header(model)
     md = hdr.get("__metadata__", {})
@@ -471,7 +471,7 @@ def extract(model, outdir, sm_names=False):
     os.makedirs(outdir, exist_ok=True)
     paths = []
     for i, data in enumerate(get_covers(md), 1):
-        if sm_names:
+        if gnames:
             name = stem + (".preview.jpeg" if i == 1 else ".gallery%d.jpeg" % (i - 1))
         else:
             name = "cover_%d.jpg" % i
@@ -638,7 +638,7 @@ def cmd_verify(a):
 
 
 def cmd_extract(a):
-    paths = extract(a.model, a.outdir, a.sm_names)
+    paths = extract(a.model, a.outdir, a.gnames)
     print("\n".join(paths) if paths else "nothing embedded in " + a.model)
 
 
@@ -720,7 +720,7 @@ def main(argv=None):
     x = s.add_parser("extract", help="write the covers and cm-info out as files")
     x.add_argument("model")
     x.add_argument("outdir")
-    x.add_argument("--sm-names", action="store_true", help="name them NAME.preview.jpeg, NAME.gallery1.jpeg ...")
+    x.add_argument("--gnames", action="store_true", help="name them NAME.preview.jpeg, NAME.gallery1.jpeg ...")
     x.set_defaults(f=cmd_extract)
 
     t = s.add_parser("strip", help="undo: remove everything this tool added")

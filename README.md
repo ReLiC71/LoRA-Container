@@ -44,7 +44,7 @@ The window
 ----------
     lora-container-gui            (or: python3 lora_container_gui.py)
 
-Open a .safetensors and Save as: that is all, if the images and details sit beside the model under the usual names (`NAME.preview.jpeg`, `NAME.gallery1.jpeg` to `NAME.gallery5.jpeg`, `NAME.cm-info.json`), because they are picked up when the file is opened. Otherwise add up to six images and fill in the details by hand. The first image is the cover. Opening a file that already has covers shows them, so the same window is the viewer. It can also verify a file, extract its images, and remove the embedded data again. It uses tkinter, which comes with Python on Windows and macOS; on Linux it may be a separate package (`python3-tk`).
+Open a .safetensors and Save as: that is all, if the images and details sit beside the model under these names (`NAME.preview.jpeg` and `NAME.cm-info.json` are Stability Matrix's; `NAME.gallery1.jpeg` to `NAME.gallery5.jpeg` are this project's own, as Stability Matrix keeps a cover only), because they are picked up when the file is opened. Otherwise add up to six images and fill in the details by hand. The first image is the cover. Opening a file that already has covers shows them, so the same window is the viewer. It can also verify a file, extract its images, and remove the embedded data again. It uses tkinter, which comes with Python on Windows and macOS; on Linux it may be a separate package (`python3-tk`).
 
 The command line
 ----------------
@@ -52,7 +52,7 @@ The command line
     lora-container meta out.safetensors --tags "style, landscape" -m key=value --force
     lora-container show out.safetensors
     lora-container verify out.safetensors
-    lora-container extract out.safetensors outdir --sm-names
+    lora-container extract out.safetensors outdir --gnames
     lora-container strip out.safetensors -o plain.safetensors
     lora-container batch folder --out folder2
 
@@ -62,7 +62,7 @@ The command line
 - `embed --replace` changes the covers of a file that already has them.
 - `--title`, `--author`, `--base-model`, `--trigger-words`, `--tags` and `--description` go into the embedded cm-info. `-m key=value` sets a plain metadata key.
 - `--sidecar` also updates the `.cm-info.json` beside the output and adds a numbered `Changelog` line.
-- `batch` handles every model in a folder. For `NAME.safetensors` it takes `NAME.preview.jpeg` then `NAME.gallery1.jpeg` and so on (the Stability Matrix names), or the images in a folder called `NAME`, plus `NAME.cm-info.json` and an optional `NAME.meta.json` of extra fields.
+- `batch` handles every model in a folder. For `NAME.safetensors` it takes `NAME.preview.jpeg` then `NAME.gallery1.jpeg` and so on (`preview` is Stability Matrix's name; `gallery` is this project's own), or the images in a folder called `NAME`, plus `NAME.cm-info.json` and an optional `NAME.meta.json` of extra fields.
 - Exit codes: 0 done, 1 a check failed, 2 bad input, 3 refused because it would overwrite.
 
 Tests
