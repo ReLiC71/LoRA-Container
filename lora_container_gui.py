@@ -349,6 +349,9 @@ class App:
                  else "%d embedded images" % len(covers) if covers else "No embedded images"]
         if beside:
             lines.append("Details taken from the .cm-info.json beside the file")
+        risky = lc.local_paths(lc.read_header(path)[1].get("__metadata__", {}))
+        if risky:
+            lines.append("Possible local path in: " + ", ".join(risky))
         if md.get("tensor_data_sha256"):
             lines.append("Identity (tensor data SHA-256):\n" + md["tensor_data_sha256"])
         if md.get("model_sha256_original"):
@@ -503,7 +506,9 @@ class App:
 
         def done(rep):
             self.open_model(rep["out"])
-            self.say("Saved %s: %d images, %.1f KiB of header" % (rep["out"], rep["covers"], rep["header_new"] / 1024))
+            self.say("Saved %s: %d images, %.1f KiB of header%s" % (
+                rep["out"], rep["covers"], rep["header_new"] / 1024,
+                ". Local paths left out of the cm-info: " + ", ".join(rep["scrubbed"]) if rep["scrubbed"] else ""))
 
         self._work("Saving...", lambda: lc.embed(model, covers, out, True, True, meta, None, fields, True, sidecar), done)
 

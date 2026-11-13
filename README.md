@@ -29,6 +29,7 @@ Practical notes
 - The convention is one cover and five gallery images. At the default 512 px and JPEG quality 46, six add about 0.3 MiB.
 - Editing the header changes the whole-file hash, which breaks hash lookups on sites such as Civitai. `tensor_data_sha256` does not change, and `model_sha256_original` and the embedded cm-info keep the hash the model is known by.
 - Tensor data is never changed. Every write is checked against the tensor hash before it replaces anything.
+- Paths on your machine are kept out. Any local path in the cm-info is blanked before it is embedded, and `verify` and the window point out other metadata (a trainer's own keys, say) that seems to hold one.
 - It can be undone. `strip` removes everything that was added and says whether the result is byte for byte the original file.
 
 Install

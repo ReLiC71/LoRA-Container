@@ -16,7 +16,7 @@ Exit codes: 0 done, 1 a check failed, 2 bad input, 3 refused (would overwrite).
 """
 import argparse, base64, binascii, datetime, hashlib, json, os, re, struct, sys, zlib
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 FORMAT = "1"
 MAX_COVERS = 6  # the convention: one cover (preview and icon) and five gallery images
 MAX_HEADER = 100_000_000
@@ -35,6 +35,12 @@ FIELDS = {  # tool name -> cm-info name, is a list
     "description": ("ModelDescription", False),
     "model_type": ("ModelType", False),
 }
+
+# cm-info fields that are free text, where a leading slash is not a path
+FREE_TEXT = ("ModelName", "ModelDescription", "VersionName", "VersionDescription", "UserTitle", "Tags", "TrainedWords")
+_PATH_START = re.compile(r"(?:/(?!/)|~[/\\]|[A-Za-z]:[/\\]|\\\\|file:)")
+_PATH_INSIDE = re.compile(r"(?:^|[\s\"'=:,\[{(])(?:/(?:home|Users|Volumes|private|root|mnt|media|run|var|tmp|opt|srv|data|content|workspace|kaggle)/"
+                          r"|~[/\\]|[A-Za-z]:[/\\]|\\\\[^\\]|file://)")
 
 try:
     from blake3 import blake3 as _blake3
@@ -231,6 +237,34 @@ def default_cm_info(model):
     }
 
 
+def scrub_paths(obj, trail=""):
+    """Blank every value in a cm-info that is a path on this machine. Returns the names of the fields blanked."""
+    found = []
+    if isinstance(obj, dict):
+        for k, v in list(obj.items()):
+            name = trail + "." + k if trail else k
+            if k in FREE_TEXT:
+                continue
+            if isinstance(v, str) and _PATH_START.match(v):
+                obj[k] = None
+                found.append(name)
+            else:
+                found += scrub_paths(v, name)
+    elif isinstance(obj, list):
+        keep = [v for v in obj if not (isinstance(v, str) and _PATH_START.match(v))]
+        if len(keep) != len(obj):
+            obj[:] = keep
+            found.append(trail)
+        for v in obj:
+            found += scrub_paths(v, trail)
+    return found
+
+
+def local_paths(md):
+    """Names of the metadata keys whose value seems to hold a path on somebody's machine."""
+    return sorted(k for k, v in md.items() if not re.fullmatch(r"cover_\d+", k) and _PATH_INSIDE.search(v))
+
+
 def _as_list(v):
     if isinstance(v, (list, tuple)):
         return [str(x).strip() for x in v if str(x).strip()]
@@ -309,7 +343,7 @@ def embed(model, covers=None, out=None, force=False, replace=False, meta=None, u
     for k, v in (meta or {}).items():
         md[k] = str(v)
 
-    embedded = old_cm
+    embedded, scrubbed = old_cm, []
     if cm_info:
         embedded = dict(old_cm or disk_cm or default_cm_info(model))
         for k, v in (fields or {}).items():
@@ -321,6 +355,7 @@ def embed(model, covers=None, out=None, force=False, replace=False, meta=None, u
         embedded["OriginalHashes"] = original
         embedded.pop("CurrentHash", None)
         embedded["ThumbnailImageUrl"] = None  # a local path: no use, and private, inside the file
+        scrubbed = scrub_paths(embedded)
         md["cm_info"] = json.dumps(embedded, separators=(",", ":"), ensure_ascii=False)
 
     hb = header_bytes(hdr)
@@ -330,7 +365,7 @@ def embed(model, covers=None, out=None, force=False, replace=False, meta=None, u
     rep = {"model": model, "out": dst, "covers": int(md.get("cover_count", 0)), "header_old": n,
            "header_new": len(hb), "size_new": os.path.getsize(model) - n + len(hb),
            "tensor_data_sha256": tensor, "model_sha256_original": md["model_sha256_original"],
-           "dry_run": dry_run, "sidecar": None}
+           "dry_run": dry_run, "sidecar": None, "scrubbed": scrubbed, "local_paths": local_paths(md)}
     if not dry_run:
         _write(model, dst, hb, n, tensor)
         if sidecar:
@@ -420,6 +455,8 @@ def verify(model):
         problems.append(str(e))
     if n % 8:
         notes.append("header is not padded to 8 bytes")
+    if local_paths(md):
+        notes.append("possible local path in: " + ", ".join(local_paths(md)))
     return {"model": model, "status": "failed" if problems else "ok", "problems": problems, "notes": notes}
 
 
@@ -546,6 +583,11 @@ def _say_write(rep):
         verb, rep["out"], rep["covers"], rep["header_old"] / 1024, rep["header_new"] / 1024, rep["size_new"] / 2**20))
     if rep["sidecar"]:
         print("sidecar", rep["sidecar"])
+    if rep["scrubbed"]:
+        print("left out of the embedded cm-info, as paths on this machine: " + ", ".join(rep["scrubbed"]))
+    if rep["local_paths"]:
+        print("note: these metadata keys seem to hold a path on somebody's machine, and travel with the file: "
+              + ", ".join(rep["local_paths"]))
 
 
 def cmd_embed(a):

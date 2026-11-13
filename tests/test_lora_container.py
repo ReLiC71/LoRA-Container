@@ -369,3 +369,33 @@ def test_sample_is_version_1_and_undoes_exactly(tmp_path):
     assert cm["Hashes"]["SHA256"].lower() == md["model_sha256_original"] and cm["ThumbnailImageUrl"] is None
     plain = str(tmp_path / "plain.safetensors")
     assert lc.strip(SAMPLE, plain)["exact"] is True and sha(plain) == md["model_sha256_original"]
+
+
+def test_local_paths_are_blanked_or_flagged(tmp_path, capsys):
+    model = make_model(tmp_path / "m.safetensors", {"ss_dataset_dirs": '{"/home/someone/train/10_x": {"n_repeats": 10}}',
+                                                    "ss_output_name": "x", "note": "ratio 3/4, see https://example.com/a"})
+    side = {"ModelName": "/slash name", "ModelDescription": "/home/kept as text", "Tags": ["/r/kept"],
+            "ThumbnailImageUrl": "/home/someone/m.preview.jpeg", "SourceUrl": "https://civitai.com/models/1",
+            "Extra": {"LocalPath": "C:\\Users\\someone\\m.png", "Url": "//cdn.example.com/x", "List": ["~/a.png", "ok"]},
+            "Other": "file:///home/someone/x"}
+    json.dump(side, open(lc.sidecar_path(model), "w"))
+    out = str(tmp_path / "o.safetensors")
+    rep = lc.embed(model, [make_image(tmp_path / "i.png")], out)
+    assert sorted(rep["scrubbed"]) == ["Extra.List", "Extra.LocalPath", "Other"] and rep["local_paths"] == ["cm_info", "ss_dataset_dirs"]
+    cm = json.loads(lc.read_header(out)[1]["__metadata__"]["cm_info"])
+    assert cm["ThumbnailImageUrl"] is None and cm["Other"] is None and cm["Extra"] == {"LocalPath": None, "Url": "//cdn.example.com/x", "List": ["ok"]}
+    assert cm["ModelName"] == "/slash name" and cm["Tags"] == ["/r/kept"] and cm["SourceUrl"] == "https://civitai.com/models/1"
+    assert "possible local path in: cm_info, ss_dataset_dirs" in lc.verify(out)["notes"] and lc.verify(out)["status"] == "ok"
+    assert lc.main(["embed", model, str(tmp_path / "i.png"), "-o", str(tmp_path / "p.safetensors")]) == 0
+    said = capsys.readouterr().out
+    assert "left out of the embedded cm-info" in said and "ss_dataset_dirs" in said
+    assert lc.local_paths({"a": "plain", "b": "1/2 and 3:4", "cover_1": "/home/x", "c": "https://example.com/Users/x",
+                           "d": "v1-5-pruned.safetensors", "e": "//cdn.example.com/a"}) == []
+    every = {"linux": "/home/a/b", "mac": "/Users/a/b", "mac_volume": "x /Volumes/Disk/a", "win": "C:\\Users\\a",
+             "win_forward": "D:/train/a", "win_share": "\\\\nas\\share\\a", "tilde": "~/a", "url": "file:///C:/a",
+             "in_json": '{"dir": "/mnt/c/train"}', "win_in_json": json.dumps({"dir": "E:\\data\\x"}), "colab": "/content/drive/x"}
+    assert lc.local_paths(every) == sorted(every)
+    for value in ("/home/a/b.png", "/Users/a/b.png", "/Volumes/D/b.png", "C:\\Users\\a\\b.png", "D:/a/b.png",
+                  "\\\\nas\\share\\b.png", "~/b.png", "~\\b.png", "file:///home/a/b.png"):
+        cm = {"Path": value, "Nested": [{"Path": value}]}
+        assert lc.scrub_paths(cm) == ["Path", "Nested.Path"] and cm == {"Path": None, "Nested": [{"Path": None}]}

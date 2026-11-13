@@ -41,7 +41,7 @@ The embedded cm-info
 
 - `Hashes` and `OriginalHashes` both describe the file before embedding: `SHA256` (upper-case hex), `CRC32`, and `BLAKE3` when the writer could calculate it.
 - There is no `CurrentHash`, for the reason given above.
-- `ThumbnailImageUrl` is `null`. In a sidecar it is a path on one machine, which is of no use, and private, inside a shared file.
+- `ThumbnailImageUrl` is `null`, and so is any other value that is a path on the writer's machine. In a sidecar such a path is of no use to anyone else, and private, inside a shared file. Free-text fields (names, descriptions, tags, trigger words) are left as they are.
 
 A reader that writes the cm-info back out as a sidecar should set `Hashes` to the hashes of the file as it is now, and keep `OriginalHashes`.
 
