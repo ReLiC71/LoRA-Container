@@ -88,20 +88,20 @@ def test_gui_refuses_bad_input(app, tmp_path):
 
 
 def test_gui_one_click_from_loose_files(app, tmp_path):
-    model = make_model(tmp_path / "Joel Rea.safetensors")
-    make_image(tmp_path / "Joel Rea.preview.jpeg", colour=(1, 2, 3))
+    model = make_model(tmp_path / "Sample Model.safetensors")
+    make_image(tmp_path / "Sample Model.preview.jpeg", colour=(1, 2, 3))
     for i in range(1, 8):
-        make_image(tmp_path / ("Joel Rea.gallery%d.jpeg" % i))
-    json.dump({"ModelName": "Joel Rea Style", "AuthorUsername": "someone", "BaseModel": "Flux.1 D", "TrainedWords": ["jr"],
-               "ThumbnailImageUrl": "/home/x/y.jpeg"}, open(tmp_path / "Joel Rea.cm-info.json", "w"))
+        make_image(tmp_path / ("Sample Model.gallery%d.jpeg" % i))
+    json.dump({"ModelName": "Sample Model Style", "AuthorUsername": "someone", "BaseModel": "Flux.1 D", "TrainedWords": ["jr"],
+               "ThumbnailImageUrl": "/home/x/y.jpeg"}, open(tmp_path / "Sample Model.cm-info.json", "w"))
     assert app.open_model(model) and len(app.covers) == 6 and app.dirty
-    assert app.covers[0].name == "Joel Rea.preview.jpeg" and app.covers[5].name == "Joel Rea.gallery5.jpeg"
-    assert app.entries["title"].get() == "Joel Rea Style" and app.entries["trigger_words"].get() == "jr"
+    assert app.covers[0].name == "Sample Model.preview.jpeg" and app.covers[5].name == "Sample Model.gallery5.jpeg"
+    assert app.entries["title"].get() == "Sample Model Style" and app.entries["trigger_words"].get() == "jr"
     out = str(tmp_path / "out.safetensors")
     app.save(out)
     app.wait()
     md = lc.read_header(out)[1]["__metadata__"]
     cm = json.loads(md["cm_info"])
-    assert app.error is None and md["cover_count"] == "6" and cm["ModelName"] == "Joel Rea Style"
+    assert app.error is None and md["cover_count"] == "6" and cm["ModelName"] == "Sample Model Style"
     assert cm["BaseModel"] == "Flux.1 D" and cm["ThumbnailImageUrl"] is None and not app.dirty
     assert lc.verify(out)["status"] == "ok" and all(c.embedded for c in app.covers)

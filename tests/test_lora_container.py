@@ -316,10 +316,10 @@ def test_cli(kit, capsys):
     out = str(tmp / "o.safetensors")
     assert lc.main(["embed", model] + imgs) == lc.EXIT_REFUSED
     assert lc.main(["embed", model, "-o", str(tmp / "none.safetensors")]) == lc.EXIT_INPUT
-    named = make_model(tmp / "Joel Rea.safetensors")
-    make_image(tmp / "Joel Rea.preview.jpeg")
-    make_image(tmp / "Joel Rea.gallery1.jpeg")
-    make_image(tmp / "Joel Rea other.preview.jpeg")
+    named = make_model(tmp / "Sample Model.safetensors")
+    make_image(tmp / "Sample Model.preview.jpeg")
+    make_image(tmp / "Sample Model.gallery1.jpeg")
+    make_image(tmp / "Sample Model other.preview.jpeg")
     assert lc.main(["embed", named, "-o", str(tmp / "named.safetensors")]) == 0
     assert lc.read_header(str(tmp / "named.safetensors"))[1]["__metadata__"]["cover_count"] == "2"
     assert lc.main(["embed", model] + imgs + ["-o", out, "-m", "k=v", "--author", "Rob", "--trigger-words", "x,y"]) == 0
