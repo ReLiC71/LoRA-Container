@@ -54,4 +54,4 @@ What this repository adds is a plain key-per-cover layout, a two-hash identity s
 
 Status
 ------
-A proof of concept. No model weights are included in this repository.
+A proof of concept. The only model file here is `sample/chaoslandscape.safetensors`, a small SD 1.5 LoRA (trigger word `chaoslandscape`) trained by the author on his own generated images, with six covers embedded. Drop it into `viewer.html` to see them.
