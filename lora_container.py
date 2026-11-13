@@ -16,7 +16,7 @@ Exit codes: 0 done, 1 a check failed, 2 bad input, 3 refused (would overwrite).
 """
 import argparse, base64, binascii, datetime, hashlib, json, os, re, struct, sys, zlib
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 FORMAT = "1"
 MAX_COVERS = 6  # the convention: one cover (preview and icon) and five gallery images
 MAX_HEADER = 100_000_000

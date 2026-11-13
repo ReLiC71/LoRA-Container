@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lora-container"
-version = "1.0.1"
+version = "1.0.2"
 description = "Put a cover image, a gallery and metadata inside a .safetensors header"
 readme = "README.md"
 license = { text = "Apache-2.0" }
